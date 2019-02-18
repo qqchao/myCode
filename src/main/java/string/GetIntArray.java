@@ -1,7 +1,6 @@
 package string;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class GetIntArray {
@@ -30,7 +29,7 @@ public class GetIntArray {
         if(lastIndex + 1 == remark.length()){
             result.add(Integer.valueOf(sb.toString()));
         }
-        sb = new StringBuilder();
+
         return result;
     }
 }
