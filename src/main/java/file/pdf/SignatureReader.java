@@ -1,24 +1,18 @@
 package file.pdf;
 
-import com.itextpdf.io.source.ByteArrayOutputStream;
-import com.itextpdf.io.source.RASInputStream;
-import com.itextpdf.io.source.RandomAccessFileOrArray;
-import com.itextpdf.io.source.RandomAccessSourceFactory;
-import com.itextpdf.kernel.pdf.PdfArray;
-import com.itextpdf.kernel.pdf.PdfDictionary;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfName;
-import com.itextpdf.kernel.pdf.PdfReader;
-import com.itextpdf.kernel.pdf.PdfString;
-import com.itextpdf.signatures.SignatureUtil;
-import com.spire.pdf.security.PdfSignature;
-import com.spire.pdf.widget.PdfFormFieldWidgetCollection;
-import com.spire.pdf.widget.PdfFormWidget;
-import com.spire.pdf.widget.PdfSignatureFieldWidget;
-import java.io.ByteArrayInputStream;
+import com.itextpdf.text.pdf.AcroFields;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.security.CertificateInfo;
+import com.itextpdf.text.pdf.security.PdfPKCS7;
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.security.GeneralSecurityException;
+import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 /**
@@ -27,171 +21,135 @@ import java.util.List;
 public class SignatureReader {
 
     public static void main(String[] args) {
-//        getSignature();
-
-        getSignature2();
-
-//        getSignature3();
-    }
-
-//    private static void getSignature(){
-//        //加载含有签名的PDF文件
-//        PdfReader pdfReader = new PdfReader("E:/files/test/test2.pdf");
-//
-//        PdfDocument pdfDocument = new PdfDocument(pdfReader);
-//
-//        //获取域集合
-//        PdfFormWidget pdfFormWidget = (PdfFormWidget) pdfDocument.getForm();
-//        PdfFormFieldWidgetCollection pdfFormFieldWidgetCollection = pdfFormWidget.getFieldsWidget();
-//
-//        //获取签名域
-//        for (int i = 0; i < pdfFormFieldWidgetCollection.getCount(); i++) {
-//            if (pdfFormFieldWidgetCollection.get(i) instanceof PdfSignatureFieldWidget) {
-//                PdfSignatureFieldWidget signatureFieldWidget = (PdfSignatureFieldWidget) pdfFormFieldWidgetCollection.get(i);
-//
-//                //获取签名
-//                PdfSignature signature = signatureFieldWidget.getSignature();
-//
-//                //判断签名是否有效
-//                boolean result = signature.verifySignature();
-//                if(result) {
-//                    System.out.println("有效签名");
-//                }else
-//                {
-//                    System.out.println("无效签名");
-//                }
-//            }
-//        }
-//    }
-
-    private static void getSignature2(){
-        boolean result = false;
 
         try {
-
-            PdfReader pdfReader = new PdfReader("E:/files/test/test2.pdf");
-
-            PdfDocument pdfDocument = new PdfDocument(pdfReader);
-            SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
-            List<String> signedNames = signatureUtil.getSignatureNames();
-
-            //遍历签名的内容并做验签
-            for (String signedName : signedNames) {
-
-                //获取签名值
-                byte[] signedData = getSignData(signatureUtil , signedName);
-
-                //校验签名
-//                result = SignUtil.verifyP7AttachData(signedData);
-
-            }
-        } catch (Exception e) {
+            getSignature();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
 
-//        return result;
     }
 
-    /**
-     * 获取签名数据
-     * @param signatureUtil
-     * @param signedName
-     * @return
-     */ private static byte[] getSignData(SignatureUtil signatureUtil, String signedName) {
-         PdfDictionary pdfDictionary = signatureUtil.getSignatureDictionary(signedName);
-         PdfString contents = pdfDictionary.getAsString(PdfName.Contents);
-         return contents.getValueBytes();
-     }
-     /**
-     * 获取源数据（如果subFilter使用的是Adbe.pkcs7.detached就需要在验签的时候获取 源数据 并与 签名数据 进行 p7detach 校验）
-     * @param pdfReader
-     * @param signatureUtil
-     * @param signedName
-     * @return
-     */
-//     private static byte[] getOriginData(PdfReader pdfReader, SignatureUtil signatureUtil, String signedName) {
-//         byte[] originData = null;
-//         try {
-//             PdfSignature pdfSignature = signatureUtil.getSignature(signedName);
-//             PdfArray pdfArray = pdfSignature.getByteRange();
-//             RandomAccessFileOrArray randomAccessFileOrArray = pdfReader.getSafeFile();
-//             InputStream rg = new RASInputStream(new RandomAccessSourceFactory().createRanged(randomAccessFileOrArray.createSourceView(), SignatureUtil.asLongArray(pdfArray)));
-//             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//             byte[] buf = new byte[8192]; int n = 0;
-//             while (-1 != (n = rg.read(buf))) {
-//                 outputStream.write(buf, 0, n);
-//             }
-//             originData = outputStream.toByteArray();
-//         } catch (IOException e) {
-//             e.printStackTrace();
-//         } return originData;
-//     }
+
+    public static void getSignature() throws IOException, GeneralSecurityException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException
+    {
+        System.out.println("\n\ntest.pdf\n==============");
+
+        //初始化一些莫名的东西，没搞懂干嘛用，反正得有，不然会报错
+        //BouncyCastleProvider bcp = new BouncyCastleProvider();
+        //Security.addProvider(bcp);
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
 
 
+//        try (   InputStream resource = getClass().getResourceAsStream("E:/files/test/test2.pdf") )
+        try
+        {
+            //读取数据
+            PdfReader reader = new PdfReader("E:/files/test/test2.pdf");
+            //
+            AcroFields acroFields = reader.getAcroFields();
+            //获取
+            List<String> names = acroFields.getSignatureNames();
+            for (String name : names) {
+                System.out.println();
+                System.out.println("Signature name: " + name);
+                System.out.println("Signature covers whole document: " + acroFields.signatureCoversWholeDocument(name));
+                PdfPKCS7 pk = acroFields.verifySignature(name);
 
-    public static void getSignature3(){
-//        try {
-//            PdfReader reader = new PdfReader("E:/files/test/test.pdf");
-//            AcroFields acroFields = reader.getAcroFields();
-//            if (acroFields == null) {
-//                return ;
-//            }
-//
-//            List<String> signatureNames = acroFields.getSignatureNames();
-//            if (signatureNames == null || signatureNames.size() == 0) {
-//                return ;
-//            }
-//
-//            reader.close();
-//            for (String str : signatureNames) {
-//                PdfDictionary sigDict = acroFields.getSignatureDictionary(str);
-//                if (sigDict == null) {
-//                    continue;
-//                }
-//
-//
-//                PdfName sub = sigDict.getAsName(PdfName.SUBFILTER);
-//                if (PdfName.ADBE_PKCS7_DETACHED.equals(sub)) {
-//                    System.out.println("subCode ADBE_PKCS7_DETACHED");
-//                }
-////                if (PdfName.ADBE_X509_RSA_SHA1.equals(sub)) {
-////签章对应的证书
-//                    PdfString certStr = sigDict.getAsString(PdfName.CERT);
-//                    if (certStr == null) {
-//                        certStr = sigDict.getAsArray(PdfName.CERT).getAsString(0);
-//                    }
-//                    if (certStr == null) {
-//                        continue;
-//                    }
-////签章对应的证书
-//                    X509CertParser certParser = new X509CertParser();
-//                    certParser.engineInit(new ByteArrayInputStream(certStr.getBytes()));
-//                    Collection<Certificate> certs = certParser.engineReadAll();
-//                    if (certs == null || certs.size() == 0) {
-//                        continue;
-//                    }
-//                    X509Certificate certificate = (X509Certificate) certs.iterator().next();
-//                    if (certificate == null) {
-//                        continue;
-//                    }
-//                    X500Principal principal = certificate.getSubjectX500Principal();
-//                    if (principal == null) {
-//                        continue;
-//                    }
-////签章对应的证书的所有者
-////                    LdapName ldapDN = new LdapName(principal.getName());
-////                    for (Rdn rdn : ldapDN.getRdns()) {
-////                        if ("CN".equals(rdn.getType())) {
-////                            result.add((String) rdn.getValue());
-////                        }
-////                    }
-////                }
+                //签章信息
+                X509Certificate x509Certificate = pk.getSigningCertificate();
+
+                System.out.println(x509Certificate.getSigAlgName());
+                System.out.println(x509Certificate.getSigAlgOID());
+                System.out.println(x509Certificate.getSerialNumber());
+                System.out.println(x509Certificate.getBasicConstraints());
+                System.out.println(x509Certificate.getType());
+                System.out.println();
+
+                System.out.println("current date " + new Date());
+                System.out.println("current date " + (new Date()).getTime());
+                //有效期是日期
+                System.out.println("before date " + x509Certificate.getNotBefore());
+                System.out.println("before date " + x509Certificate.getNotBefore().getTime());
+                //有效截止日期
+                System.out.println("after date " + x509Certificate.getNotAfter());
+                System.out.println("after date " + x509Certificate.getNotAfter().getTime());
+
+                CertificateInfo.getSubjectFields(x509Certificate);
+
+                //使用者
+                System.out.println("Subject: " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()));
+                System.out.println("Subject:SURNAME " + CertificateInfo.getSubjectFields(x509Certificate).getField("SURNAME"));
+                System.out.println("Subject:CN " + CertificateInfo.getSubjectFields(x509Certificate).getField("CN"));
+                System.out.println("Subject:OU " + CertificateInfo.getSubjectFields(x509Certificate).getField("OU"));
+                System.out.println("Subject:O " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()).getField("O"));
+
+                //发行者
+                System.out.println("Issuer: " + CertificateInfo.getIssuerFields(x509Certificate));
+                System.out.println("Issuer: " + CertificateInfo.getIssuerFields(x509Certificate).getField("SURNAME"));
+                System.out.println("Issuer: " + CertificateInfo.getIssuerFields(x509Certificate).getField("CN"));
+                System.out.println("Issuer: " + CertificateInfo.getIssuerFields(x509Certificate).getField("OU"));
+                System.out.println("Issuer: " + CertificateInfo.getIssuerFields(x509Certificate).getField("O"));
+
+                //是否有效
+                System.out.println("Document verifies: " + pk.verify());
+
+                Field rsaDataField = PdfPKCS7.class.getDeclaredField("RSAdata");
+                rsaDataField.setAccessible(true);
+                Object rsaDataFieldContent = rsaDataField.get(pk);
+                if (rsaDataFieldContent != null && ((byte[])rsaDataFieldContent).length == 0)
+                {
+                    System.out.println("Found zero-length encapsulated content: ignoring");
+                    rsaDataField.set(pk, null);
+                }
+
+                System.out.println("Document verifies: " + pk.verify());
             }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        System.out.println();
 
 
+        Field rsaDataField = PdfPKCS7.class.getDeclaredField("RSAdata");
+        rsaDataField.setAccessible(true);
+//        try (   InputStream resource = getClass().getResourceAsStream("E:/files/test/test2.pdf") )
+        try
+        {
+            PdfReader reader = new PdfReader("E:/files/test/test2.pdf");
+            AcroFields acroFields = reader.getAcroFields();
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            List<String> names = acroFields.getSignatureNames();
+            for (String name : names) {
+                System.out.println("Signature name: " + name);
+                System.out.println("Signature covers whole document: " + acroFields.signatureCoversWholeDocument(name));
+                PdfPKCS7 pk = acroFields.verifySignature(name);
+                System.out.println("Subject: " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()));
+                System.out.println("Subject: " + CertificateInfo.getIssuerFields(pk.getSigningCertificate()));
+
+                System.out.println("Subject:SURNAME " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()).getField("SURNAME"));
+                System.out.println("Subject:CN " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()).getField("CN"));
+                System.out.println("Subject:OU " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()).getField("OU"));
+                System.out.println("Subject:O " + CertificateInfo.getSubjectFields(pk.getSigningCertificate()).getField("O"));
+
+                Object rsaDataFieldContent = rsaDataField.get(pk);
+                if (rsaDataFieldContent != null && ((byte[])rsaDataFieldContent).length == 0)
+                {
+                    System.out.println("Found zero-length encapsulated content: ignoring");
+                    rsaDataField.set(pk, null);
+                }
+                System.out.println("Document verifies: " + pk.verify());
+            }
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }
 }
+
