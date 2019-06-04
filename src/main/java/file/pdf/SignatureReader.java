@@ -11,7 +11,6 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
@@ -46,12 +45,11 @@ public class SignatureReader {
         //Security.addProvider(bcp);
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
 
-
 //        try (   InputStream resource = getClass().getResourceAsStream("E:/files/test/test2.pdf") )
         try
         {
             //读取数据
-            PdfReader reader = new PdfReader("E:/files/test/test2.pdf");
+            PdfReader reader = new PdfReader("E:/files/test/test.pdf");
             //
             AcroFields acroFields = reader.getAcroFields();
             //获取
@@ -59,6 +57,7 @@ public class SignatureReader {
             for (String name : names) {
                 System.out.println();
                 System.out.println("Signature name: " + name);
+                System.out.println(acroFields.verifySignature(name).getTimeStampToken());
                 System.out.println("Signature covers whole document: " + acroFields.signatureCoversWholeDocument(name));
                 PdfPKCS7 pk = acroFields.verifySignature(name);
 
@@ -123,7 +122,7 @@ public class SignatureReader {
 //        try (   InputStream resource = getClass().getResourceAsStream("E:/files/test/test2.pdf") )
         try
         {
-            PdfReader reader = new PdfReader("E:/files/test/test2.pdf");
+            PdfReader reader = new PdfReader("E:/files/test/test.pdf");
             AcroFields acroFields = reader.getAcroFields();
 
             List<String> names = acroFields.getSignatureNames();
